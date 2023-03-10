@@ -17,12 +17,36 @@ router.post('/tasks', auth, async (req, res) => {
     }
 })
 
+//GET /tasks?
 router.get('/tasks', auth, async (req, res) => {
     try {
-        const tasks = await Task.find({ owner: req.user._id })
-        // await req.user.populate('tasks').execPopulate()
-        // res.send(req.user)
+        const limit = parseInt(req.query.limit) //pagination limit
+        const skip = parseInt(req.query.skip) //how many data to skip
+        let tasks = await Task.find({ owner: req.user._id, ...(req.query.completed ? { completed: req.query.completed === "true" } : {}) })
+        if (skip && limit) {
+            tasks = tasks.slice(skip, limit)
+        }
+        // sorting not working
+        if (req.query.sort) {
+            tasks.sort((task1, task2) => req.query.sort.toLowerCase() === "asc" ? task1.createdAt - task2.createdAt : task2.createdAt - task1.createdAt)
+        }
         res.send(tasks)
+        //=============================not working===============================
+        // console.log(req.user)
+        // await req.user.populate({
+        //     path: 'tasks',
+        //     match,
+        //     options: {
+        //          limit,
+        //          skip,
+        //          sort: {
+        //              createdAt: 1
+        //}
+        // }
+        // }).execPopulate()
+        // console.log(req.user)
+        // res.send(req.user.tasks)
+
     } catch (e) {
         res.status(500).send()
     }
